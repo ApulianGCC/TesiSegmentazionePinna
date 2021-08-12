@@ -4,7 +4,6 @@ LAMBDA = 100
 OUTPUT_CHANNELS = 3
 
 
-
 def downsample(filters, size, apply_batchnorm=True):
     initializer = tf.random_normal_initializer(0., 0.02)
 
@@ -39,6 +38,7 @@ def upsample(filters, size, apply_dropout=False):
     result.add(tf.keras.layers.ReLU())
 
     return result
+
 
 def Generator():
     inputs = tf.keras.layers.Input(shape=[512, 512, 3])

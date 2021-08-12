@@ -46,4 +46,4 @@ if __name__ == '__main__':
     if not os.path.exists(pathSaveOutput):
         os.makedirs(pathSaveOutput)
 
-    createSquareImages(pathInput, pathSaveOutput, (0, 0, 0))
+    createSquareImages(pathOutput, pathSaveOutput, (0, 0, 0))
