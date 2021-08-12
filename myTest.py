@@ -10,45 +10,22 @@ from IPython import display
 
 
 def load(image_file):
-    print('load')
-    print(tf.executing_eagerly())
-    if(tf.is_tensor(image_file)):
-       tf.print(image_file)
-       #image_file = image_file.eval()
+    if tf.is_tensor(image_file):
+        path = image_file.numpy().decode('utf-8')
+    else:
+        path = image_file
 
-
-    print('test senza str', image_file)
-
-    #print(image_file.numpy())
-    # Read and decode an image file to a uint8 tensor
-    image = tf.io.read_file(image_file)
-    image = tf.image.decode_jpeg(image)
-
-    input_image = image[:, :, :]
-    real_image = image[:, :, :]
-
-    # Convert both images to float32 tensors
+    input_image = tf.io.read_file(image_file)
+    input_image = tf.image.decode_jpeg(input_image)
     input_image = tf.cast(input_image, tf.float32)
-    real_image = tf.cast(real_image, tf.float32)
-
-    '''
-    # Read and decode an image file to a uint8 tensor
-    image_file = str(image_file)
-    image_name = os.path.basename(image_file)
-
-    path = image_file.replace(image_name, '')
-    image_input = tf.io.read_file(path + '\\' + image_name)
-    image_input = tf.image.decode_jpeg(image_input)
-    image_input = tf.cast(image_input, tf.float32)
 
     path = path.replace('input', 'output')
-    image_name = image_name.replace('jpg', 'png')
-    image_output = tf.io.read_file(path + image_name)
+    path = path.replace('jpg', 'png')
+    image_output = tf.io.read_file(path)
     image_output = tf.image.decode_jpeg(image_output)
     image_output = tf.cast(image_output, tf.float32)
-    '''
 
-    return input_image, real_image
+    return input_image, image_output
 
 
 def load_image_train(image_file):
@@ -125,15 +102,16 @@ dirname = os.path.dirname(__file__)
 pathInputTrain = os.path.join(dirname, 'dataset\\originaleSquared\\train\\input\\*.jpg')
 
 train_dataset = tf.data.Dataset.list_files(pathInputTrain)
-#train_dataset = train_dataset.map(lambda x: tf.py_function(load_image_train, [x], [tf.string]),num_parallel_calls=tf.data.AUTOTUNE)
+train_dataset = train_dataset.map(lambda x: tf.py_function(load_image_train, [x], [tf.float32, tf.float32]),
+                                  num_parallel_calls=tf.data.AUTOTUNE)
 
-train_dataset = train_dataset.map(load_image_train, num_parallel_calls=tf.data.AUTOTUNE)
+# train_dataset = train_dataset.map(load_image_train, num_parallel_calls=tf.data.AUTOTUNE)
 train_dataset = train_dataset.shuffle(BUFFER_SIZE)
 train_dataset = train_dataset.batch(BATCH_SIZE)
 
 pathInputVal = os.path.join(dirname, 'dataset\\originaleSquared\\val\\input\\*.jpg')
 test_dataset = tf.data.Dataset.list_files(pathInputVal)
-test_dataset = test_dataset.map(load_image_test)
+test_dataset = test_dataset.map(lambda x: tf.py_function(load_image_test, [x], [tf.float32, tf.float32]))
 test_dataset = test_dataset.batch(BATCH_SIZE)
 
 OUTPUT_CHANNELS = 3
@@ -294,9 +272,9 @@ tf.keras.utils.plot_model(discriminator, show_shapes=True, dpi=64)
 disc_out = discriminator([img_input[tf.newaxis, ...], gen_output], training=False)
 
 
-# plt.imshow(disc_out[0, ..., -1], vmin=-20, vmax=20, cmap='RdBu_r')
-# plt.colorbar()
-# plt.show()
+plt.imshow(disc_out[0, ..., -1], vmin=-20, vmax=20, cmap='RdBu_r')
+plt.colorbar()
+plt.show()
 
 
 def discriminator_loss(disc_real_output, disc_generated_output):
@@ -336,8 +314,5 @@ def generate_images(model, test_input, tar):
     plt.show()
 
 
-print('test generator')
-
 for example_input, example_target in test_dataset.take(1):
-    print('example_input')
     generate_images(generator, example_input, example_target)
