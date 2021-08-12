@@ -19,7 +19,6 @@ def downsample(filters, size, apply_batchnorm=True):
 
     return result
 
-
 def upsample(filters, size, apply_dropout=False):
     initializer = tf.random_normal_initializer(0., 0.02)
 
@@ -40,8 +39,9 @@ def upsample(filters, size, apply_dropout=False):
     return result
 
 
+
 def Generator():
-    inputs = tf.keras.layers.Input(shape=[512, 512, 3])
+    inputs = tf.keras.layers.Input(shape=[256, 256, 3])
 
     down_stack = [
         downsample(64, 4, apply_batchnorm=False),  # (batch_size, 128, 128, 64)
