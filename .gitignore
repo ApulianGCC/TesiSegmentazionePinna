@@ -1,3 +1,5 @@
 # ignore dataset
+# ignore logs
 
 /dataset
+/logs
