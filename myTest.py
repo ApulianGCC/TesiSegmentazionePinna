@@ -7,8 +7,8 @@ import datetime
 from matplotlib import pyplot as plt
 from IPython import display
 
-import discriminator
-import generator
+import discriminatorFile
+import generatorFile
 
 
 def load(image_file):
@@ -94,9 +94,10 @@ def train_step(input_image, target, step):
         disc_real_output = discriminator([input_image, target], training=True)
         disc_generated_output = discriminator([input_image, gen_output], training=True)
 
-        gen_total_loss, gen_gan_loss, gen_l1_loss = generator.generator_loss(disc_generated_output, gen_output, target,
-                                                                             loss_object)
-        disc_loss = discriminator.discriminator_loss(disc_real_output, disc_generated_output, loss_object)
+        gen_total_loss, gen_gan_loss, gen_l1_loss = generatorFile.generator_loss(disc_generated_output, gen_output,
+                                                                                 target,
+                                                                                 loss_object)
+        disc_loss = discriminatorFile.discriminator_loss(disc_real_output, disc_generated_output, loss_object)
 
     generator_gradients = gen_tape.gradient(gen_total_loss,
                                             generator.trainable_variables)
@@ -137,11 +138,6 @@ def fit(train_ds, test_ds, steps):
     example_input, example_target = next(iter(test_ds.take(1)))
     start = time.time()
     print("Inizio fit")
-    print("TRAIN DS --> ", train_ds)
-    print("TEST_DS --> ", test_ds)
-    print("STEPS ", steps)
-    x= test_ds.repeat().take(1)
-    print(x)
 
     for step, (input_image, target) in train_ds.repeat().take(steps).enumerate():
         print("Step nro: ", step)
@@ -172,61 +168,66 @@ BATCH_SIZE = 1
 IMG_WIDTH = 512
 IMG_HEIGHT = 512
 
-test = os.path.join(os.path.dirname(__file__), 'dataset\\originaleSquared\\train\\input\\ALT_170925_522.jpg')
+# dirname = '/home/guerra/ProgettoTesi'
+dirname = os.path.dirname(__file__)
+
+# test = os.path.join(dirname, 'dataset/training/input/ALT_170925_522.jpg')
+test = os.path.join(dirname, 'dataset\\originaleSquared\\train\\input\\ALT_170925_522.jpg')
+
 img_input, img_output = load(test)
 img_input, img_output = random_jitter(img_input, img_output)
 
-dirname = os.path.dirname(__file__)
+# pathInputTrain = os.path.join(dirname, 'dataset/training/input/*.jpg')
 pathInputTrain = os.path.join(dirname, 'dataset\\originaleSquared\\train\\input\\*.jpg')
 
 train_dataset = tf.data.Dataset.list_files(pathInputTrain)
 train_dataset = train_dataset.map(lambda x: tf.py_function(load_image_train, [x], [tf.float32, tf.float32]),
                                   num_parallel_calls=tf.data.AUTOTUNE)
 
-# train_dataset = train_dataset.map(load_image_train, num_parallel_calls=tf.data.AUTOTUNE)
-anto, nio = train_dataset.take(1)
-print(anto)
-print(nio)
 train_dataset = train_dataset.shuffle(BUFFER_SIZE)
 train_dataset = train_dataset.batch(BATCH_SIZE)
 
+# pathInputVal = os.path.join(dirname, 'dataset/test/input/*.jpg')
 pathInputVal = os.path.join(dirname, 'dataset\\originaleSquared\\val\\input\\*.jpg')
+
 test_dataset = tf.data.Dataset.list_files(pathInputVal)
 test_dataset = test_dataset.map(lambda x: tf.py_function(load_image_test, [x], [tf.float32, tf.float32]))
 test_dataset = test_dataset.batch(BATCH_SIZE)
 
 OUTPUT_CHANNELS = 3
 
-generator = generator.Generator()
+print("Letto dataset")
 
+generator = generatorFile.Generator()
+
+print("Letto generator")
 
 gen_output = generator(img_input[tf.newaxis, ...], training=False)
 
 LAMBDA = 100
-discriminator = discriminator.Discriminator()
-
+discriminator = discriminatorFile.Discriminator()
 
 disc_out = discriminator([img_input[tf.newaxis, ...], gen_output], training=False)
 generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-checkpoint_dir = '.\\training_checkpoints'
+# checkpoint_dir = './training_checkpoints'
+checkpoint_dir = os.path.join('.', 'training_checkpoints')
+
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  discriminator_optimizer=discriminator_optimizer,
                                  generator=generator,
                                  discriminator=discriminator)
 
-
 # for example_input, example_target in test_dataset.take(1):
 #     generate_images(generator, example_input, example_target)
 
 
-log_dir = "logs\\"
+log_dir = "logs"
 
-summary_writer = tf.summary.create_file_writer(
-    log_dir + "fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+summary_path = os.path.join(log_dir, 'fit', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+summary_writer = tf.summary.create_file_writer(summary_path)
 
 print('Inizio training')
 fit(train_dataset, test_dataset, steps=40000)
 print('Fine')
-

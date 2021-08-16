@@ -1,5 +1,5 @@
 import tensorflow as tf
-from generator import downsample
+from generatorFile import downsample
 
 
 def Discriminator():
