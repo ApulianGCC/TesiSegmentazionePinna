@@ -70,10 +70,10 @@ def normalize(input_image, real_image):
 
 @tf.function()
 def random_jitter(input_image, real_image):
-    # Resizing to 286x286
-    input_image, real_image = resize(input_image, real_image, 286, 286)
+    # Resizing to 542x542
+    input_image, real_image = resize(input_image, real_image, 542, 542)
 
-    # Random cropping back to 256x256
+    # Random cropping back to 512x512
     input_image, real_image = random_crop(input_image, real_image)
 
     if tf.random.uniform(()) > 0.5:
@@ -86,10 +86,11 @@ def random_jitter(input_image, real_image):
 
 @tf.function
 def train_step(input_image, target, step):
+    print("Inizio train step")
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+        print("calcolo la loss")
         loss_object = tf.keras.losses.BinaryCrossentropy(from_logits=True)
         gen_output = generator(input_image, training=True)
-
         disc_real_output = discriminator([input_image, target], training=True)
         disc_generated_output = discriminator([input_image, gen_output], training=True)
 
@@ -108,6 +109,7 @@ def train_step(input_image, target, step):
                                                 discriminator.trainable_variables))
 
     with summary_writer.as_default():
+        print("Inizio scrittura")
         tf.summary.scalar('gen_total_loss', gen_total_loss, step=step // 1000)
         tf.summary.scalar('gen_gan_loss', gen_gan_loss, step=step // 1000)
         tf.summary.scalar('gen_l1_loss', gen_l1_loss, step=step // 1000)
@@ -115,6 +117,7 @@ def train_step(input_image, target, step):
 
 
 def generate_images(model, test_input, tar):
+    print("Generate images")
     prediction = model(test_input, training=True)
     plt.figure(figsize=(15, 15))
 
@@ -133,8 +136,15 @@ def generate_images(model, test_input, tar):
 def fit(train_ds, test_ds, steps):
     example_input, example_target = next(iter(test_ds.take(1)))
     start = time.time()
+    print("Inizio fit")
+    print("TRAIN DS --> ", train_ds)
+    print("TEST_DS --> ", test_ds)
+    print("STEPS ", steps)
+    x= test_ds.repeat().take(1)
+    print(x)
 
     for step, (input_image, target) in train_ds.repeat().take(steps).enumerate():
+        print("Step nro: ", step)
         if step % 1000 == 0:
             display.clear_output(wait=True)
 
@@ -157,10 +167,10 @@ def fit(train_ds, test_ds, steps):
             checkpoint.save(file_prefix=checkpoint_prefix)
 
 
-BUFFER_SIZE = 464
+BUFFER_SIZE = 61645
 BATCH_SIZE = 1
-IMG_WIDTH = 256
-IMG_HEIGHT = 256
+IMG_WIDTH = 512
+IMG_HEIGHT = 512
 
 test = os.path.join(os.path.dirname(__file__), 'dataset\\originaleSquared\\train\\input\\ALT_170925_522.jpg')
 img_input, img_output = load(test)
@@ -174,6 +184,9 @@ train_dataset = train_dataset.map(lambda x: tf.py_function(load_image_train, [x]
                                   num_parallel_calls=tf.data.AUTOTUNE)
 
 # train_dataset = train_dataset.map(load_image_train, num_parallel_calls=tf.data.AUTOTUNE)
+anto, nio = train_dataset.take(1)
+print(anto)
+print(nio)
 train_dataset = train_dataset.shuffle(BUFFER_SIZE)
 train_dataset = train_dataset.batch(BATCH_SIZE)
 
@@ -185,32 +198,35 @@ test_dataset = test_dataset.batch(BATCH_SIZE)
 OUTPUT_CHANNELS = 3
 
 generator = generator.Generator()
-tf.keras.utils.plot_model(generator, show_shapes=True, dpi=64)
+
 
 gen_output = generator(img_input[tf.newaxis, ...], training=False)
 
 LAMBDA = 100
 discriminator = discriminator.Discriminator()
-tf.keras.utils.plot_model(discriminator, show_shapes=True, dpi=64)
+
 
 disc_out = discriminator([img_input[tf.newaxis, ...], gen_output], training=False)
 generator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
 discriminator_optimizer = tf.keras.optimizers.Adam(2e-4, beta_1=0.5)
-checkpoint_dir = './training_checkpoints'
+checkpoint_dir = '.\\training_checkpoints'
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 checkpoint = tf.train.Checkpoint(generator_optimizer=generator_optimizer,
                                  discriminator_optimizer=discriminator_optimizer,
                                  generator=generator,
                                  discriminator=discriminator)
 
-#
+
 # for example_input, example_target in test_dataset.take(1):
 #     generate_images(generator, example_input, example_target)
 
 
-log_dir = "logs/"
+log_dir = "logs\\"
 
 summary_writer = tf.summary.create_file_writer(
-    log_dir + "fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    log_dir + "fit\\" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
+print('Inizio training')
 fit(train_dataset, test_dataset, steps=40000)
+print('Fine')
+
