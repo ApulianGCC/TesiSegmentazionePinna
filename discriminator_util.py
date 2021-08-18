@@ -1,5 +1,5 @@
 import tensorflow as tf
-from generatorFile import downsample
+from generator_util import downsample
 
 
 def Discriminator():
@@ -29,7 +29,6 @@ def Discriminator():
                                   kernel_initializer=initializer)(zero_pad2)
 
     return tf.keras.Model(inputs=[inp, tar], outputs=last)
-
 
 
 def discriminator_loss(disc_real_output, disc_generated_output, loss_object):

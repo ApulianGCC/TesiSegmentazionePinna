@@ -30,6 +30,14 @@ def createSquareImages(path, save_path, background_color):
 if __name__ == '__main__':
     print("Eseguito script come main")
 
+    img = PIL.Image.open('result/input/finValidation.jpg')
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+    square_img = expand2square(img, (255, 0, 0))
+    square_img.save('finValidationSquared.jpg')
+
+    print('stop')
+
     dirname = os.path.dirname(__file__)
     pathInput = os.path.join(dirname, 'dataset\\originale\\input\\')
 
