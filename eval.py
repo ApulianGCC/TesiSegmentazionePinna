@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 import PIL.Image
 
+
 def expand2square(pil_img, background_color):
     width, height = pil_img.size
     if width == height:
