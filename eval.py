@@ -19,7 +19,7 @@ def expand2square(pil_img, background_color):
 
 input_folder = os.path.join('result', 'input')
 output_folder = os.path.join('result', 'output')
-saved_model_dir = 'saved_model'
+saved_model_dir = 'saved_model_second_test'
 
 generator = tf.keras.models.load_model(os.path.join(saved_model_dir, 'generator'))
 discriminator = tf.keras.models.load_model(os.path.join(saved_model_dir, 'discriminator'))
